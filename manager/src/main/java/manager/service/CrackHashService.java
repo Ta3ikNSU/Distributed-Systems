@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -26,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Slf4j
+@EnableScheduling
 public class CrackHashService {
 
     private final Map<String, RequestStatus> requests = new ConcurrentHashMap<>();

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -29,6 +30,7 @@ import static org.paukov.combinatorics.CombinatoricsFactory.createMultiCombinati
 
 @Service
 @Slf4j
+@EnableScheduling
 public class CrackService {
 
     @Value("${crackHashService.manager.ip}")
