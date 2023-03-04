@@ -1,8 +1,9 @@
 FROM openjdk:11-jdk-slim AS build
-COPY . /manager
 WORKDIR /manager
+COPY . /manager
 RUN ./gradlew bootJar
 
-FROM openjdk:11-jre-slim
-COPY --from=build /manager/build/libs/*.jar manager.jar
-CMD ["java", "-jar", "/manager.jar"]
+WORKDIR /
+
+COPY "/manager/build/libs/manager.jar" "manager.jar"
+ENTRYPOINT ["java","-jar","/manager.jar"]

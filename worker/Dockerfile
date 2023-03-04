@@ -1,8 +1,9 @@
 FROM openjdk:11-jdk-slim AS build
-COPY . /worker
 WORKDIR /worker
+COPY . /worker
 RUN ./gradlew build
 
-FROM openjdk:11-jre-slim
-COPY --from=build /worker/build/libs/*.jar worker.jar
-CMD ["java", "-jar", "/worker.jar"]
+WORKDIR /
+
+COPY "/worker/build/libs/worker.jar" "worker.jar"
+ENTRYPOINT ["java","-jar","/worker.jar"]

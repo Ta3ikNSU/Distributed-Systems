@@ -1,10 +1,9 @@
 version: '3'
 services:
   manager:
-    image: openjdk:11-jdk-slim
-    volumes:
-      - ./manager/build/libs/manager.jar:/manager.jar
-    command: ["java -jar /manager.jar"]
+    build:
+      context: ./manager
+      dockerfile: Dockerfile
     ports:
       - "8081:8081"
     expose:
@@ -17,10 +16,9 @@ services:
       - my-network
 
   worker:
-    image: openjdk:11-jdk-slim
-    volumes:
-      - ./worker/build/libs/worker.jar:/worker.jar
-    command: ["java", "-jar", "/worker.jar"]
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
     expose:
       - "8082"
     environment:
