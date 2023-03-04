@@ -1,11 +1,13 @@
-package nsu.task1.manager.config;
+package manager.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
-public class    Config {
+@EnableScheduling
+public class Config {
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();

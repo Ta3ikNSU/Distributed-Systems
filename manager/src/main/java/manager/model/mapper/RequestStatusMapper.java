@@ -1,7 +1,7 @@
-package nsu.task1.manager.model.mapper;
+package manager.model.mapper;
 
-import nsu.task1.manager.api.DTO.RequestStatusDTO;
-import nsu.task1.manager.model.entity.RequestStatus;
+import manager.api.DTO.RequestStatusDTO;
+import manager.model.entity.RequestStatus;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;

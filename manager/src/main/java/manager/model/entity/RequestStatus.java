@@ -1,12 +1,12 @@
-package nsu.task1.manager.model.entity;
+package manager.model.entity;
 
 import lombok.Data;
-import nsu.task1.manager.service.CrackHashService;
+import manager.service.CrackHashService;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static nsu.task1.manager.model.entity.RequestStatus.Status.IN_PROGRESS;
+import static manager.model.entity.RequestStatus.Status.IN_PROGRESS;
 
 @Data
 public class RequestStatus {
