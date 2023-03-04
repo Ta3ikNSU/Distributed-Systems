@@ -1,0 +1,97 @@
+plugins {
+    id 'java'
+    id 'war'
+    id 'org.springframework.boot' version '2.6.5'
+    id 'io.spring.dependency-management' version '1.1.0'
+}
+
+group = 'lab1'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    jaxb
+}
+
+bootJar {
+    archiveBaseName = 'gs-producing-web-service'
+    archiveVersion = '0.1.0'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src/main/java'
+            srcDir 'build/generated-sources/jaxb'
+        }
+    }
+}
+
+task genJaxb {
+    ext.sourcesDir = "${buildDir}/generated-sources/jaxb"
+    ext.classesDir = "${buildDir}/classes/jaxb"
+    ext.schemaDir = "src/main/resources/schema"
+
+    outputs.dir sourcesDir
+
+    doLast() {
+        project.ant {
+            taskdef name: "xjc", classname: "com.sun.tools.xjc.XJCTask",
+                    classpath: configurations.jaxb.asPath
+            mkdir(dir: sourcesDir)
+
+            xjc(destdir: sourcesDir) {
+                schema(dir: schemaDir, includes: "**/*.xsd")
+                arg(value: "-wsdl")
+                produces(dir: sourcesDir, includes: "**/*.java")
+            }
+        }
+    }
+}
+
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-web-services'
+    implementation 'wsdl4j:wsdl4j'
+    implementation("com.googlecode.combinatoricslib:combinatoricslib:2.3")
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    annotationProcessor 'org.projectlombok:lombok'
+    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    jaxb("org.glassfish.jaxb:jaxb-xjc")
+
+    implementation 'javax.xml.bind:jaxb-api:2.3.0'
+    implementation 'javax.activation:activation:1.1'
+    implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.0'
+
+    // https://mvnrepository.com/artifact/org.apache.camel/camel-netty4
+    implementation("org.apache.camel:camel-netty4:2.25.4")
+
+    // https://mvnrepository.com/artifact/org.apache.httpcomponents.client5/httpclient5
+    implementation("org.apache.httpcomponents.client5:httpclient5:5.2.1")
+
+    implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    dependsOn genJaxb;
+}

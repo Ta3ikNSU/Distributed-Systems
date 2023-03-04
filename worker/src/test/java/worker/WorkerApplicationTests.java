@@ -1,10 +1,10 @@
-package nsu.task1.manager;
+package worker;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class ManagerApplicationTests {
+class WorkerApplicationTests {
 
     @Test
     void contextLoads() {
