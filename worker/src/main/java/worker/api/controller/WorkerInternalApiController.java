@@ -17,7 +17,7 @@ import ru.nsu.ccfit.schema.crack_hash_request.CrackHashManagerRequest;
 @Slf4j
 @Controller
 @RequestMapping("/internal/api/worker")
-public class WorkerController {
+public class WorkerInternalApiController {
 
     @Autowired
     private CrackService crackService;
