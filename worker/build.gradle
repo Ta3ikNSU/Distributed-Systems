@@ -1,12 +1,9 @@
 plugins {
     id 'java'
-    id 'war'
     id 'org.springframework.boot' version '2.6.5'
     id 'io.spring.dependency-management' version '1.1.0'
 }
 
-group = 'lab1'
-version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '11'
 
 configurations {
@@ -24,8 +21,7 @@ configurations {
 }
 
 bootJar {
-    archiveBaseName = 'gs-producing-web-service'
-    archiveVersion = '0.1.0'
+    archiveBaseName = 'worker'
 }
 
 sourceSets {
@@ -62,14 +58,12 @@ task genJaxb {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-web-services'
-    implementation 'wsdl4j:wsdl4j'
+    implementation 'org.springframework.data:spring-data-commons:2.6.5'
+    implementation 'org.mapstruct:mapstruct:1.5.3.Final'
     implementation("com.googlecode.combinatoricslib:combinatoricslib:2.3")
-
     compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     annotationProcessor 'org.projectlombok:lombok'
-    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
     jaxb("org.glassfish.jaxb:jaxb-xjc")
@@ -77,12 +71,6 @@ dependencies {
     implementation 'javax.xml.bind:jaxb-api:2.3.0'
     implementation 'javax.activation:activation:1.1'
     implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.0'
-
-    // https://mvnrepository.com/artifact/org.apache.camel/camel-netty4
-    implementation("org.apache.camel:camel-netty4:2.25.4")
-
-    // https://mvnrepository.com/artifact/org.apache.httpcomponents.client5/httpclient5
-    implementation("org.apache.httpcomponents.client5:httpclient5:5.2.1")
 
     implementation 'org.apache.httpcomponents:httpclient:4.5.13'
 
@@ -94,4 +82,16 @@ tasks.named('test') {
 
 tasks.withType(JavaCompile).configureEach {
     dependsOn genJaxb;
+}
+
+jar {
+    manifest {
+        attributes "Main-Class" : "worker.WorkerApplication"
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.WARN
 }

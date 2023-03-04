@@ -1,12 +1,9 @@
 plugins {
     id 'java'
-    id 'war'
     id 'org.springframework.boot' version '2.6.5'
     id 'io.spring.dependency-management' version '1.1.0'
 }
 
-group = 'nsu.task1'
-version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '11'
 
 configurations {
@@ -24,8 +21,7 @@ configurations {
 }
 
 bootJar {
-    archiveBaseName = 'gs-producing-web-service'
-    archiveVersion = '0.1.0'
+    archiveBaseName = 'manager'
 }
 
 sourceSets {
@@ -66,7 +62,6 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
-    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
     jaxb("org.glassfish.jaxb:jaxb-xjc")
@@ -82,4 +77,16 @@ tasks.named('test') {
 
 tasks.withType(JavaCompile).configureEach {
     dependsOn genJaxb;
+}
+
+jar {
+    manifest {
+        attributes "Main-Class" : "manager.ManagerApplication"
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.WARN
 }
