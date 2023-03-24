@@ -10,7 +10,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import ru.nsu.ccfit.schema.crack_hash_request.CrackHashManagerRequest;
@@ -25,6 +24,8 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.paukov.combinatorics.CombinatoricsFactory.createMultiCombinationGenerator;
 
@@ -38,13 +39,14 @@ public class CrackService {
     @Value("${crackHashService.manager.port}")
     Integer managerPort;
 
-    Queue<CrackHashManagerRequest> tasks = new ArrayDeque<>();
-
+    ExecutorService executorService = Executors.newFixedThreadPool(10);
     @Autowired
     private RestTemplate restTemplate;
 
     public void putTask(CrackHashManagerRequest request) {
-        tasks.add(request);
+        executorService.execute(() -> {
+            crackCode(request);
+        });
     }
 
     private void sendResponse(CrackHashWorkerResponse response) {
@@ -65,37 +67,29 @@ public class CrackService {
         return response;
     }
 
-    @Scheduled(fixedDelay = 1000)
-    private void crackHash() {
-        while (!tasks.isEmpty()) {
-            CrackHashManagerRequest request = tasks.poll();
-            log.info("progress task: {}", request);
-            ICombinatoricsVector<String> vector =
-                    CombinatoricsFactory.createVector(request.getAlphabet().getSymbols());
-            List<String> answers = new ArrayList<>();
-            for (int i = 1; i <= request.getMaxLength(); i++) {
-                Generator<String> gen = createMultiCombinationGenerator(vector, i);
-                for (var string : gen) {
-                    log.info("check string is : {}", string.toString());
-                    MessageDigest md5 = null;
-                    try {
-                        md5 = MessageDigest.getInstance("MD5");
-                    } catch (NoSuchAlgorithmException e) {
-                        throw new RuntimeException(e);
-                    }
-                    String inputString = String.join("", string.getVector());
-                    String hash = (new HexBinaryAdapter()).marshal(md5.digest(inputString.getBytes()));
-                    log.info("string is : {}, requested hash is : {}, hash is : {}",
-                            String.join("", string.getVector()),
-                            request.getHash(),
-                            hash);
-                    if (request.getHash().equalsIgnoreCase(hash)) {
-                        answers.add(String.join("", string.getVector()));
-                        log.info("added answer : {}", String.join("", string.getVector()));
-                    }
+    private void crackCode(CrackHashManagerRequest request){
+        log.info("progress task: {}", request);
+        ICombinatoricsVector<String> vector = CombinatoricsFactory.createVector(request.getAlphabet().getSymbols());
+        List<String> answers = new ArrayList<>();
+        for (int i = 1; i <= request.getMaxLength(); i++) {
+            Generator<String> gen = createMultiCombinationGenerator(vector, i);
+            for (var string : gen) {
+                log.info("check string is : {}", string.toString());
+                MessageDigest md5 = null;
+                try {
+                    md5 = MessageDigest.getInstance("MD5");
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e);
+                }
+                String inputString = String.join("", string.getVector());
+                String hash = (new HexBinaryAdapter()).marshal(md5.digest(inputString.getBytes()));
+                log.info("string is : {}, requested hash is : {}, hash is : {}", String.join("", string.getVector()), request.getHash(), hash);
+                if (request.getHash().equalsIgnoreCase(hash)) {
+                    answers.add(String.join("", string.getVector()));
+                    log.info("added answer : {}", String.join("", string.getVector()));
                 }
             }
-            sendResponse(buildResponse(request.getRequestId(), request.getPartNumber(), answers));
         }
+        sendResponse(buildResponse(request.getRequestId(), request.getPartNumber(), answers));
     }
 }
