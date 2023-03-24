@@ -1,0 +1,59 @@
+version: '3'
+services:
+  manager:
+    build:
+      context: ./manager
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    expose:
+      - "8081"
+    environment:
+      - MANAGER_SERVICE_PORT=8081
+    networks:
+      - my-network
+
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    deploy:
+      mode: replicated
+      replicas: 2
+    networks:
+      - my-network
+
+  rabbitmq:
+    image: rabbitmq:3.9.9-management
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - my-network
+
+  mongo1:
+    image: mongo:latest
+    command: mongod --replSet rs0 --port 27017
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo1_data:/data/db
+  mongo2:
+    image: mongo:latest
+    command: mongod --replSet rs0 --port 27017
+    volumes:
+      - mongo2_data:/data/db
+  mongo3:
+    image: mongo:latest
+    command: mongod --replSet rs0 --port 27017
+    volumes:
+      - mongo3_data:/data/db
+
+
+networks:
+  my-network:
+    driver: bridge

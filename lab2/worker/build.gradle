@@ -1,0 +1,97 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '2.6.5'
+    id 'io.spring.dependency-management' version '1.1.0'
+}
+
+sourceCompatibility = '11'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    jaxb
+}
+
+bootJar {
+    archiveBaseName = 'worker'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src/main/java'
+            srcDir 'build/generated-sources/jaxb'
+        }
+    }
+}
+
+task genJaxb {
+    ext.sourcesDir = "${buildDir}/generated-sources/jaxb"
+    ext.classesDir = "${buildDir}/classes/jaxb"
+    ext.schemaDir = "src/main/resources/schema"
+
+    outputs.dir sourcesDir
+
+    doLast() {
+        project.ant {
+            taskdef name: "xjc", classname: "com.sun.tools.xjc.XJCTask",
+                    classpath: configurations.jaxb.asPath
+            mkdir(dir: sourcesDir)
+
+            xjc(destdir: sourcesDir) {
+                schema(dir: schemaDir, includes: "**/*.xsd")
+                arg(value: "-wsdl")
+                produces(dir: sourcesDir, includes: "**/*.java")
+            }
+        }
+    }
+}
+
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.data:spring-data-commons:2.6.5'
+    implementation 'org.mapstruct:mapstruct:1.5.3.Final'
+    implementation("com.googlecode.combinatoricslib:combinatoricslib:2.3")
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    jaxb("org.glassfish.jaxb:jaxb-xjc")
+
+    implementation 'javax.xml.bind:jaxb-api:2.3.0'
+    implementation 'javax.activation:activation:1.1'
+    implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.0'
+
+    implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    dependsOn genJaxb;
+}
+
+jar {
+    manifest {
+        attributes "Main-Class" : "worker.WorkerApplication"
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.WARN
+}
