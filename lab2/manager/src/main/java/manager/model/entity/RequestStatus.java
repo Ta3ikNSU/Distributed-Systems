@@ -1,29 +1,40 @@
 package manager.model.entity;
 
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-import javax.persistence.*;
 import java.util.ArrayList;
-import java.util.List;
-
-import static manager.model.entity.RequestStatus.Status.IN_PROGRESS;
+import java.util.Date;
 
 @AllArgsConstructor
 @RequiredArgsConstructor
-@Entity
+@Getter
+@Setter
+@ToString
+@EqualsAndHashCode
+@Document("RequestStatus")
 public class RequestStatus {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long requestId;
+    private String requestId;
 
-    @Column(name = "status")
-    private Status status = IN_PROGRESS;
+    private Status status;
 
-    @ElementCollection
-    @CollectionTable(name = "result", joinColumns = @JoinColumn(name = "request_id"))
-    private List<String> result = new ArrayList<>();
+    private ArrayList<String> result;
+
+    private Date updated;
+
+    public RequestStatus (String id) {
+        this.requestId = id;
+        this.status = Status.IN_PROGRESS;
+        this.updated = new Date(System.currentTimeMillis());
+        result = new ArrayList<>();
+    }
 
     public enum Status {
         IN_PROGRESS,

@@ -3,5 +3,10 @@ package manager.model.repository;
 import manager.model.entity.RequestStatus;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-public interface RequestStatusRepository extends MongoRepository<RequestStatus, Long> {
+import java.util.Collection;
+import java.util.Date;
+
+public interface RequestStatusRepository extends MongoRepository<RequestStatus, String> {
+    RequestStatus findByRequestId(String requestId);
+    Collection<RequestStatus> findAllByUpdatedBeforeAndStatusEquals(Date timestamp, RequestStatus.Status status);
 }
