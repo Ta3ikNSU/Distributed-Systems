@@ -100,7 +100,9 @@ public class CrackHashService {
         requestCreated.removeIf(pair -> {
             if (System.currentTimeMillis() - pair.getSecond().getTime() > expireTimeMinutes * 60 * 1000) {
                 requests.computeIfPresent(pair.getFirst(), (s, requestStatus) -> {
-                    requestStatus.setStatus(RequestStatus.Status.ERROR);
+                    if (requestStatus.getStatus().equals(RequestStatus.Status.IN_PROGRESS)) {
+                        requestStatus.setStatus(RequestStatus.Status.ERROR);
+                    }
                     return requestStatus;
                 });
                 return true;
