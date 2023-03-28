@@ -1,22 +1,31 @@
 version: '3.8'
 
 services:
- mongo:
-  image: mongo:latest
-  command: mongod --auth --port 27017
-  ports:
-   - "27017:27017"
-  volumes:
-   - mongo_data:/data/db
-  environment:
-   MONGO_INITDB_ROOT_USERNAME: admin
-   MONGO_INITDB_ROOT_PASSWORD: admin_password
-   MONGO_INITDB_DATABASE: crack_hash_db
-  networks:
-   - mongo
-
+  mongo:
+    image: mongo:latest
+    command: mongod --auth --port 27017
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin_password
+      MONGO_INITDB_DATABASE: crack_hash_db
+    networks:
+      - mongo
+  rabbitmq:
+    image: rabbitmq:latest
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+     RABBITMQ_DEFAULT_PASS: pass
+     RABBITMQ_DEFAULT_USER: user
+    read_only: false
 networks:
- mongo:
+  mongo:
 
 volumes:
- mongo_data:
+  mongo_data:

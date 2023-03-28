@@ -71,6 +71,7 @@ dependencies {
     implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.0'
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-mongodb
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:2.6.5'
+    implementation 'org.springframework.amqp:spring-rabbit:2.4.5'
 }
 
 tasks.named('test') {
