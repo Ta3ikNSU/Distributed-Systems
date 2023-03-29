@@ -72,9 +72,8 @@ public class CrackService {
         ICombinatoricsVector<String> vector = CombinatoricsFactory.createVector(request.getAlphabet().getSymbols());
         List<String> answers = new ArrayList<>();
         for (int i = 1; i <= request.getMaxLength(); i++) {
-            Generator<String> gen = createMultiCombinationGenerator(vector, i);
+            Generator<String> gen = CombinatoricsFactory.createPermutationWithRepetitionGenerator(vector, i);
             for (var string : gen) {
-//                log.info("check string is : {}", string.toString());
                 MessageDigest md5 = null;
                 try {
                     md5 = MessageDigest.getInstance("MD5");
@@ -83,7 +82,6 @@ public class CrackService {
                 }
                 String inputString = String.join("", string.getVector());
                 String hash = (new HexBinaryAdapter()).marshal(md5.digest(inputString.getBytes()));
-//                log.info("string is : {}, requested hash is : {}, hash is : {}", String.join("", string.getVector()), request.getHash(), hash);
                 if (request.getHash().equalsIgnoreCase(hash)) {
                     answers.add(String.join("", string.getVector()));
                     log.info("added answer : {}", String.join("", string.getVector()));
