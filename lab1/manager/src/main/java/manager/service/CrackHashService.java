@@ -61,7 +61,7 @@ public class CrackHashService {
         crackHashManagerRequest.setPartCount(1);
         crackHashManagerRequest.setAlphabet(alphabet);
         try {
-            log.info("Sending request to worker: {}", crackHashManagerRequest);
+            log.info("Sending request with id : {}, to worker: {}", id, crackHashManagerRequest);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_XML);
