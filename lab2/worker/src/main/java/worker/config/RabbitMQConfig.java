@@ -1,4 +1,4 @@
-package manager.config;
+package worker.config;
 
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -11,11 +11,10 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMQConfig {
-
-    @Value("${crackHashService.manager.queue.input}")
+    @Value("${crackHashService.worker.queue.input}")
     private String inputQueue;
 
-    @Value("${crackHashService.manager.queue.output}")
+    @Value("${crackHashService.worker.queue.output}")
     private String outputQueue;
 
     @Autowired

@@ -1,34 +1,27 @@
 package manager.service;
 
 import lombok.extern.slf4j.Slf4j;
-import manager.api.DTO.OkResponse;
 import manager.api.DTO.RequestStatusDTO;
+import manager.model.entity.Request;
 import manager.model.entity.RequestStatus;
 import manager.model.entity.RequestStatus.Status;
 import manager.model.mapper.RequestStatusMapper;
 import manager.model.repository.RequestStatusRepository;
+import manager.model.repository.RequestsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import ru.nsu.ccfit.schema.crack_hash_request.CrackHashManagerRequest;
 import ru.nsu.ccfit.schema.crack_hash_response.CrackHashWorkerResponse;
 
 import javax.annotation.PostConstruct;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 
 @Service
 @Slf4j
-@EnableScheduling
 public class CrackHashService {
     private final RequestStatusMapper requestStatusMapper = RequestStatusMapper.INSTANCE;
     private final CrackHashManagerRequest.Alphabet alphabet = new CrackHashManagerRequest.Alphabet();
@@ -38,10 +31,15 @@ public class CrackHashService {
     Integer workerPort;
     @Value("${crackHashService.manager.expireTimeMinutes}")
     Integer expireTimeMinutes;
+
     @Autowired
-    private RestTemplate restTemplate;
+    private RabbitProducer rabbitProducer;
+
     @Autowired
     private RequestStatusRepository requestStatusRepository;
+
+    @Autowired
+    private RequestsRepository requestsRepository;
 
     @PostConstruct
     private void init() {
@@ -50,7 +48,7 @@ public class CrackHashService {
     }
 
     public String crackHash(String hash, int maxLength) {
-        RequestStatus entity = requestStatusRepository.insert(new RequestStatus(UUID.randomUUID().toString()));
+        RequestStatus entity = requestStatusRepository.insert(new RequestStatus());
         CrackHashManagerRequest crackHashManagerRequest = new CrackHashManagerRequest();
         crackHashManagerRequest.setHash(hash);
         crackHashManagerRequest.setMaxLength(maxLength);
@@ -58,12 +56,7 @@ public class CrackHashService {
         crackHashManagerRequest.setPartNumber(1);
         crackHashManagerRequest.setPartCount(1);
         crackHashManagerRequest.setAlphabet(alphabet);
-        try {
-            sendTaskToWorker(crackHashManagerRequest);
-        } catch (Exception e) {
-            log.error("Error while sending request to worker", e);
-            return null;
-        }
+        sendTaskToWorker(crackHashManagerRequest);
         return entity.getRequestId();
     }
 
@@ -83,15 +76,9 @@ public class CrackHashService {
     }
 
     private void sendTaskToWorker(CrackHashManagerRequest crackHashManagerRequest) {
-        log.info("Sending request to worker: {}", crackHashManagerRequest);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_XML);
-        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-        restTemplate.exchange(
-                String.format("https://%s:%s/internal/api/worker/hash/crack/task", workerIp, workerPort),
-                HttpMethod.POST,
-                new HttpEntity<>(crackHashManagerRequest, headers),
-                OkResponse.class);
+        if (!rabbitProducer.trySendMessage(crackHashManagerRequest)) {
+            requestsRepository.insert(new Request(crackHashManagerRequest));
+        }
     }
 
     @Scheduled(fixedDelay = 10000)

@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.UUID;
 
 @AllArgsConstructor
 @RequiredArgsConstructor
@@ -29,8 +30,8 @@ public class RequestStatus {
 
     private Date updated;
 
-    public RequestStatus (String id) {
-        this.requestId = id;
+    public RequestStatus () {
+        this.requestId = UUID.randomUUID().toString();
         this.status = Status.IN_PROGRESS;
         this.updated = new Date(System.currentTimeMillis());
         result = new ArrayList<>();
