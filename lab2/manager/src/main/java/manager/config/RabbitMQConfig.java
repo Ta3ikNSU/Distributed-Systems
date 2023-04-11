@@ -1,12 +1,10 @@
 package manager.config;
 
-import ch.qos.logback.classic.pattern.MessageConverter;
 import manager.service.ManagerListener;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
-import org.springframework.amqp.support.converter.Jackson2XmlMessageConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,13 +44,13 @@ public class RabbitMQConfig {
     @Bean
     public RabbitTemplate rabbitTemplate() {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory());
-        rabbitTemplate.setDefaultReceiveQueue("crackHassh");
-        rabbitTemplate.setMessageConverter(xmlMessageConverter());
+        rabbitTemplate.setDefaultReceiveQueue("crackHash");
+//        rabbitTemplate.setMessageConverter(xmlMessageConverter());
         return rabbitTemplate;
     }
 
-    @Bean
-    public MessageConverter xmlMessageConverter() {
-        return new Jackson2XmlMessageConverter();
-    }
+//    @Bean
+//    public MessageConverter xmlMessageConverter() {
+//        return new Jackson2XmlMessageConverter();
+//    }
 }
