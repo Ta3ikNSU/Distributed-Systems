@@ -46,14 +46,8 @@ public class RabbitProducer implements ConnectionListener {
     public void onCreate(Connection connection) {
         List<Request> requests = crackTaskRequestRepository.findAll();
         for (var request : requests) {
-            CrackHashManagerRequest message = request.getRequest();
-            try {
-                amqpTemplate.convertAndSend(outputQueue, message);
-                crackTaskRequestRepository.delete(request);
-                log.info("Set {} part of {} task request was sent", message.getPartNumber(), message.getRequestId());
-            } catch (Exception ex) {
-                log.error("Failed to resend request '{}'", message.getRequestId());
-            }
+            trySendMessage(request.getRequest());
+            crackTaskRequestRepository.delete(request);
         }
     }
 }

@@ -18,6 +18,7 @@ import ru.nsu.ccfit.schema.crack_hash_response.CrackHashWorkerResponse;
 import javax.annotation.PostConstruct;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.IntStream;
 
 
 @Service
@@ -31,6 +32,9 @@ public class CrackHashService {
     Integer workerPort;
     @Value("${crackHashService.manager.expireTimeMinutes}")
     Integer expireTimeMinutes;
+
+    @Value("${crackHashService.manager.countWorkers}")
+    Integer countOfWorker;
 
     @Autowired
     private RabbitProducer rabbitProducer;
@@ -48,15 +52,17 @@ public class CrackHashService {
     }
 
     public String crackHash(String hash, int maxLength) {
-        RequestStatus entity = requestStatusRepository.insert(new RequestStatus());
-        CrackHashManagerRequest crackHashManagerRequest = new CrackHashManagerRequest();
-        crackHashManagerRequest.setHash(hash);
-        crackHashManagerRequest.setMaxLength(maxLength);
-        crackHashManagerRequest.setRequestId(entity.getRequestId());
-        crackHashManagerRequest.setPartNumber(1);
-        crackHashManagerRequest.setPartCount(1);
-        crackHashManagerRequest.setAlphabet(alphabet);
-        sendTaskToWorker(crackHashManagerRequest);
+        RequestStatus entity = requestStatusRepository.insert(new RequestStatus(countOfWorker));
+        IntStream.range(0, countOfWorker).forEach(i -> {
+            CrackHashManagerRequest crackHashManagerRequest = new CrackHashManagerRequest();
+            crackHashManagerRequest.setHash(hash);
+            crackHashManagerRequest.setMaxLength(maxLength);
+            crackHashManagerRequest.setRequestId(entity.getRequestId());
+            crackHashManagerRequest.setPartNumber(i);
+            crackHashManagerRequest.setPartCount(countOfWorker);
+            crackHashManagerRequest.setAlphabet(alphabet);
+            sendTaskToWorker(crackHashManagerRequest);
+        });
         return entity.getRequestId();
     }
 
@@ -65,12 +71,15 @@ public class CrackHashService {
     }
 
     public void handleWorkerCallback(CrackHashWorkerResponse crackHashWorkerResponse) {
-        log.info("Received response from worker: {}", crackHashWorkerResponse);
         RequestStatus requestStatus = requestStatusRepository.findByRequestId(crackHashWorkerResponse.getRequestId());
         if (requestStatus.getStatus() == RequestStatus.Status.IN_PROGRESS) {
             if (crackHashWorkerResponse.getAnswers() != null) {
                 requestStatus.getResult().addAll(crackHashWorkerResponse.getAnswers().getWords());
-                requestStatus.setStatus(RequestStatus.Status.READY);
+                requestStatus.getNotAnsweredWorkers().remove(crackHashWorkerResponse.getPartNumber());
+                if (requestStatus.getNotAnsweredWorkers().isEmpty()) {
+                    requestStatus.setStatus(RequestStatus.Status.READY);
+                }
+                requestStatusRepository.save(requestStatus);
             }
         }
     }
@@ -83,12 +92,9 @@ public class CrackHashService {
 
     @Scheduled(fixedDelay = 10000)
     void expireRequests() {
-        requestStatusRepository.findAllByUpdatedBeforeAndStatusEquals(
-                        new Date(System.currentTimeMillis() - expireTimeMinutes * 60 * 1000),
-                        RequestStatus.Status.IN_PROGRESS)
-                .forEach(requestStatus -> {
-                    requestStatus.setStatus(Status.ERROR);
-                    requestStatusRepository.save(requestStatus);
-                });
+        requestStatusRepository.findAllByUpdatedBeforeAndStatusEquals(new Date(System.currentTimeMillis() - expireTimeMinutes * 60 * 1000), RequestStatus.Status.IN_PROGRESS).forEach(requestStatus -> {
+            requestStatus.setStatus(Status.ERROR);
+            requestStatusRepository.save(requestStatus);
+        });
     }
 }

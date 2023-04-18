@@ -27,8 +27,8 @@ public class CrackHashController {
                 new RequestIdDTO(crackHashService.crackHash(request.getHash(), request.getMaxLength())), HttpStatus.OK);
     }
 
-    @GetMapping("/status/{requestId}")
-    public ResponseEntity<RequestStatusDTO> getStatus(@PathVariable String requestId) {
+    @GetMapping("/status")
+    public ResponseEntity<RequestStatusDTO> getStatus(@RequestParam String requestId) {
         log.info("Received request to get status of request: {}", requestId);
         return new ResponseEntity<>(crackHashService.getStatus(requestId), HttpStatus.OK);
     }

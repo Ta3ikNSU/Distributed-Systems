@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static org.paukov.combinatorics.CombinatoricsFactory.createMultiCombinationGenerator;
+import static org.paukov.combinatorics.CombinatoricsFactory.createPermutationWithRepetitionGenerator;
 
 @Service
 @Slf4j
@@ -36,8 +37,9 @@ public class CrackService {
     Integer managerPort;
 
     ExecutorService executorService = Executors.newFixedThreadPool(10);
+
     @Autowired
-    private RestTemplate restTemplate;
+    RabbitProducer rabbitProducer;
 
     public void putTask(CrackHashManagerRequest request) {
         executorService.execute(() -> {
@@ -45,12 +47,42 @@ public class CrackService {
         });
     }
 
+    private void crackCode(CrackHashManagerRequest request) {
+        log.info("progress task: {}", request);
+        ICombinatoricsVector<String> vector = CombinatoricsFactory.createVector(request.getAlphabet().getSymbols());
+        List<String> answers = new ArrayList<>();
+        for (int i = 1; i <= request.getMaxLength(); i++) {
+            Generator<String> gen = createPermutationWithRepetitionGenerator(vector, i);
+            long countPermutations = gen.getNumberOfGeneratedObjects();
+            long startIndex = countPermutations / request.getPartCount() * request.getPartNumber();
+            if (countPermutations % request.getPartCount() != 0 ) {
+                if (request.getPartNumber() < countPermutations % request.getPartCount()){
+                    startIndex += request.getPartNumber();
+                } else if (request.getPartNumber() >= countPermutations % request.getPartCount()) {
+                    startIndex += countPermutations % request.getPartCount();
+                }
+            }
+            for (var string : gen.generateObjectsRange(startIndex, startIndex + countPermutations / request.getPartCount())) {
+                MessageDigest md5 = null;
+                try {
+                    md5 = MessageDigest.getInstance("MD5");
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e);
+                }
+                String inputString = String.join("", string.getVector());
+                String hash = (new HexBinaryAdapter()).marshal(md5.digest(inputString.getBytes()));
+                if (request.getHash().equalsIgnoreCase(hash)) {
+                    answers.add(String.join("", string.getVector()));
+                    log.info("added answer : {}", String.join("", string.getVector()));
+                }
+            }
+        }
+        sendResponse(buildResponse(request.getRequestId(), request.getPartNumber(), answers));
+    }
+
+
     private void sendResponse(CrackHashWorkerResponse response) {
-        String url = String.format("http://%s:%s/api/internal/manager/hash/crack/request", managerIp, managerPort);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_XML);
-        HttpEntity<CrackHashWorkerResponse> entity = new HttpEntity<>(response, headers);
-        restTemplate.patchForObject(url, entity, OkResponse.class);
+        rabbitProducer.produce(response);
     }
 
     private CrackHashWorkerResponse buildResponse(String requestId, int partNumber, List<String> answers) {
@@ -61,31 +93,5 @@ public class CrackService {
         response.setPartNumber(partNumber);
         response.setAnswers(answer);
         return response;
-    }
-
-    private void crackCode(CrackHashManagerRequest request){
-        log.info("progress task: {}", request);
-        ICombinatoricsVector<String> vector = CombinatoricsFactory.createVector(request.getAlphabet().getSymbols());
-        List<String> answers = new ArrayList<>();
-        for (int i = 1; i <= request.getMaxLength(); i++) {
-            Generator<String> gen = createMultiCombinationGenerator(vector, i);
-            for (var string : gen) {
-                log.info("check string is : {}", string.toString());
-                MessageDigest md5 = null;
-                try {
-                    md5 = MessageDigest.getInstance("MD5");
-                } catch (NoSuchAlgorithmException e) {
-                    throw new RuntimeException(e);
-                }
-                String inputString = String.join("", string.getVector());
-                String hash = (new HexBinaryAdapter()).marshal(md5.digest(inputString.getBytes()));
-                log.info("string is : {}, requested hash is : {}, hash is : {}", String.join("", string.getVector()), request.getHash(), hash);
-                if (request.getHash().equalsIgnoreCase(hash)) {
-                    answers.add(String.join("", string.getVector()));
-                    log.info("added answer : {}", String.join("", string.getVector()));
-                }
-            }
-        }
-        sendResponse(buildResponse(request.getRequestId(), request.getPartNumber(), answers));
     }
 }

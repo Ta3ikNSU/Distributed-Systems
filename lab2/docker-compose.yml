@@ -10,6 +10,11 @@ services:
       - "8081"
     environment:
       - MANAGER_SERVICE_PORT=8081
+    links:
+      - mongo1
+      - mongo2
+      - mongo3
+      - rabbitmq
     networks:
       - my-network
 
@@ -20,28 +25,35 @@ services:
     deploy:
       mode: replicated
       replicas: 2
+    links:
+      - rabbitmq
     networks:
       - my-network
 
   rabbitmq:
-    image: rabbitmq:3.9.9-management
+    image: rabbitmq:latest
     restart: always
     ports:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: pass
+      RABBITMQ_DEFAULT_VHOST: /
     networks:
       - my-network
 
   mongo1:
     image: mongo:latest
-    command: mongod --replSet rs0 --port 27017
+    command: mongod --auth --replSet rs0 --port 27017
     ports:
       - "27017:27017"
     volumes:
       - mongo1_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin_password
+      MONGO_INITDB_DATABASE: crack_hash_db
   mongo2:
     image: mongo:latest
     command: mongod --replSet rs0 --port 27017
@@ -57,3 +69,10 @@ services:
 networks:
   my-network:
     driver: bridge
+
+
+
+volumes:
+  mongo1_data:
+  mongo2_data:
+  mongo3_data:

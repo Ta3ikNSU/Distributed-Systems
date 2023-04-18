@@ -1,16 +1,12 @@
 package manager.model.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -28,13 +24,19 @@ public class RequestStatus {
 
     private ArrayList<String> result;
 
+    private HashSet<Integer> notAnsweredWorkers;
+
     private Date updated;
 
-    public RequestStatus () {
+    public RequestStatus (int workersCount) {
         this.requestId = UUID.randomUUID().toString();
         this.status = Status.IN_PROGRESS;
         this.updated = new Date(System.currentTimeMillis());
         result = new ArrayList<>();
+        notAnsweredWorkers = new HashSet<>();
+        for (int i = 0; i < workersCount; i++) {
+            notAnsweredWorkers.add(i);
+        }
     }
 
     public enum Status {
