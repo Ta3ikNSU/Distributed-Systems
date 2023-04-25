@@ -50,7 +50,7 @@ services:
 
   mongo:
     image: mongo:4.4
-    command: bash -c "mongod --replSet rs0 --bind_ip_all  && sleep 15s && ./scripts/init.sh"
+    command: bash -c "mongod --replSet rs0 --bind_ip_all && sleep 15s && /scripts/init.sh"
     ports:
       - "27017:27017"
     links:
