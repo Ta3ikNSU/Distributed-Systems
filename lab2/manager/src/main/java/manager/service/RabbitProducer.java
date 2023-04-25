@@ -38,6 +38,7 @@ public class RabbitProducer implements ConnectionListener {
             return true;
         } catch (AmqpException ex) {
             log.error("Failed to send request '{}', cached message", request.getRequestId());
+            crackTaskRequestRepository.save(new Request(request));
             return false;
         }
     }

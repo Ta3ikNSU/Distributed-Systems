@@ -20,7 +20,8 @@ public class RabbitConsumer {
     CrackHashService crackHashService;
 
     @RabbitListener(queues = "${crackHashService.manager.queue.input}")
-    public void receiveMessage(CrackHashWorkerResponse message, Channel channel,
+    public void receiveMessage(CrackHashWorkerResponse message,
+                               Channel channel,
                                @Header(AmqpHeaders.DELIVERY_TAG) long tag) throws IOException {
         log.info("Received message: {}", message);
         crackHashService.handleWorkerCallback(message);

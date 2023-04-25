@@ -15,6 +15,8 @@ services:
       - RABBIT_HOST=rabbitmq
     links:
       - mongo
+      - mongodb_secondary_1
+      - mongodb_secondary_2
       - rabbitmq
     networks:
       - my-network
@@ -47,16 +49,36 @@ services:
       - my-network
 
   mongo:
-    image: mongo:latest
-    command: mongod --auth --port 27017
+    image: mongo:4.4
+    command: bash -c "mongod --replSet rs0 --bind_ip_all  && sleep 15s && ./scripts/init.sh"
     ports:
       - "27017:27017"
+    links:
+      - mongodb_secondary_1
+      - mongodb_secondary_2
     volumes:
-      - mongo_data:/data/db
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin_password
-      MONGO_INITDB_DATABASE: crack_hash_db
+      - ~/mongors/data1:/data/db
+      - ./init.sh:/scripts/init.sh
+    networks:
+      - my-network
+
+  mongodb_secondary_1:
+    image: mongo:4.4
+    container_name: mongodb_secondary_1
+    restart: always
+    command: mongod --bind_ip_all --replSet rs0
+    volumes:
+      - ~/mongors/data2:/data/db
+    networks:
+      - my-network
+
+  mongodb_secondary_2:
+    image: mongo:4.4
+    container_name: mongodb_secondary_2
+    restart: always
+    command: mongod --bind_ip_all --replSet rs0
+    volumes:
+      - ~/mongors/data3:/data/db
     networks:
       - my-network
 

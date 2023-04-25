@@ -15,10 +15,13 @@ import java.io.IOException;
 @Slf4j
 @EnableRabbit
 public class RabbitConsumer {
-    CrackService crackService;
+    private final CrackService crackService;
 
-    public RabbitConsumer(CrackService crackService) {
+    private final RabbitProducer rabbitProducer;
+
+    public RabbitConsumer(CrackService crackService, RabbitProducer rabbitProducer) {
         this.crackService = crackService;
+        this.rabbitProducer = rabbitProducer;
     }
 
     @RabbitListener(queues = "${crackHashService.worker.queue.input}")
@@ -27,6 +30,6 @@ public class RabbitConsumer {
                                @Header(AmqpHeaders.DELIVERY_TAG) long tag) throws IOException {
         log.info("Received message: {}", message);
         crackService.putTask(message);
-        channel.basicAck(tag, false);
+        rabbitProducer.cacheTag(channel, message.getRequestId(), message.getPartNumber(), tag);
     }
 }
