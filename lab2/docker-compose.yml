@@ -11,7 +11,7 @@ services:
     environment:
       - MANAGER_SERVICE_PORT=8081
       - COUNT_WORKERS=2
-      - MONGO_HOST=mongo
+      - MONGO_URI=mongo:27017,mongodb_secondary_1:27017,mongodb_secondary_2:27017/crack_db?replicaSet=rs0
       - RABBIT_HOST=rabbitmq
     links:
       - mongo
