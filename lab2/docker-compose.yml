@@ -13,11 +13,15 @@ services:
       - COUNT_WORKERS=2
       - MONGO_URI=mongo:27017,mongodb_secondary_1:27017,mongodb_secondary_2:27017/crack_db?replicaSet=rs0
       - RABBIT_HOST=rabbitmq
-    links:
-      - mongo
-      - mongodb_secondary_1
-      - mongodb_secondary_2
-      - rabbitmq
+    depends_on:
+      mongo:
+        condition:  service_healthy
+      mongodb_secondary_1:
+        condition:  service_healthy
+      mongodb_secondary_2:
+        condition:  service_healthy
+      rabbitmq:
+        condition:  service_healthy
     networks:
       - my-network
 
@@ -28,8 +32,9 @@ services:
     deploy:
       mode: replicated
       replicas: 2
-    links:
-      - rabbitmq
+    depends_on:
+      rabbitmq:
+        condition:  service_healthy
     environment:
       - RABBIT_HOST=rabbitmq
     networks:
@@ -45,20 +50,31 @@ services:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: pass
       RABBITMQ_DEFAULT_VHOST: /
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmqctl node_health_check"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     networks:
       - my-network
 
   mongo:
     image: mongo:4.4
-    command: bash -c "mongod --replSet rs0 --bind_ip_all && sleep 15s && /scripts/init.sh"
+    command: bash -c "mongod --replSet rs0 --bind_ip_all && /scripts/init.sh"
     ports:
       - "27017:27017"
+    restart: always
     links:
       - mongodb_secondary_1
       - mongodb_secondary_2
     volumes:
       - ~/mongors/data1:/data/db
       - ./init.sh:/scripts/init.sh
+    healthcheck:
+      test:  ["CMD", "mongo", "--eval", "'quit(db.getSiblingDB(\"admin\").runCommand({replSetGetStatus: 1}).myState == 1 ? 0 : 1)'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     networks:
       - my-network
 
@@ -69,6 +85,11 @@ services:
     command: mongod --bind_ip_all --replSet rs0
     volumes:
       - ~/mongors/data2:/data/db
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "'quit(db.getSiblingDB(\"admin\").runCommand({replSetGetStatus: 1}).myState == 2 ? 0 : 1)'" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     networks:
       - my-network
 
@@ -79,6 +100,11 @@ services:
     command: mongod --bind_ip_all --replSet rs0
     volumes:
       - ~/mongors/data3:/data/db
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "'quit(db.getSiblingDB(\"admin\").runCommand({replSetGetStatus: 1}).myState == 2 ? 0 : 1)'" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     networks:
       - my-network
 

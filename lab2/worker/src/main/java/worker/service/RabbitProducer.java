@@ -35,7 +35,7 @@ public class RabbitProducer {
 
     public void produce(CrackHashWorkerResponse response) {
         try {
-            makeAck(response.getRequestId(), response.getPartNumber());
+//            makeAck(response.getRequestId(), response.getPartNumber());
             amqpTemplate.convertAndSend(outputQueue, response);
             log.info("Set {} part of {} task request was sent", response.getPartNumber(), response.getRequestId());
         } catch (AmqpException ex) {
@@ -47,6 +47,7 @@ public class RabbitProducer {
         Long tag = requestToTag.get(key);
         try {
             channel.basicAck(tag, false);
+            log.info("maka requestId : {}, ask {}", requestId, tag);
             requestToTag.remove(key, tag);
         } catch (IOException e) {
             throw new RuntimeException(e);

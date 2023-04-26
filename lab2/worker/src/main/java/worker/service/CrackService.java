@@ -42,12 +42,12 @@ public class CrackService {
     RabbitProducer rabbitProducer;
 
     public void putTask(CrackHashManagerRequest request) {
-        executorService.execute(() -> {
+//        executorService.execute(() -> {
             crackCode(request);
-        });
+//        });
     }
 
-    private void crackCode(CrackHashManagerRequest request) {
+    public CrackHashWorkerResponse crackCode(CrackHashManagerRequest request) {
         log.info("progress task: {}", request);
         ICombinatoricsVector<String> vector = CombinatoricsFactory.createVector(request.getAlphabet().getSymbols());
         List<String> answers = new ArrayList<>();
@@ -77,12 +77,7 @@ public class CrackService {
                 }
             }
         }
-        sendResponse(buildResponse(request.getRequestId(), request.getPartNumber(), answers));
-    }
-
-
-    private void sendResponse(CrackHashWorkerResponse response) {
-        rabbitProducer.produce(response);
+        return buildResponse(request.getRequestId(), request.getPartNumber(), answers);
     }
 
     private CrackHashWorkerResponse buildResponse(String requestId, int partNumber, List<String> answers) {

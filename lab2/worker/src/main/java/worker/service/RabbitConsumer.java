@@ -25,11 +25,9 @@ public class RabbitConsumer {
     }
 
     @RabbitListener(queues = "${crackHashService.worker.queue.input}")
-    public void receiveMessage(CrackHashManagerRequest message,
-                               Channel channel,
-                               @Header(AmqpHeaders.DELIVERY_TAG) long tag) throws IOException {
+    public void receiveMessage(CrackHashManagerRequest message) {
         log.info("Received message: {}", message);
-        crackService.putTask(message);
-        rabbitProducer.cacheTag(channel, message.getRequestId(), message.getPartNumber(), tag);
+        var response = crackService.crackCode(message);
+        rabbitProducer.produce(response);
     }
 }
