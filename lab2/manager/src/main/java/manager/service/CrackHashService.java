@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import ru.nsu.ccfit.schema.crack_hash_request.CrackHashManagerRequest;
 import ru.nsu.ccfit.schema.crack_hash_response.CrackHashWorkerResponse;
 
@@ -23,6 +25,7 @@ import java.util.stream.IntStream;
 
 @Service
 @Slf4j
+@Transactional(isolation = Isolation.SERIALIZABLE)
 public class CrackHashService {
     private final RequestStatusMapper requestStatusMapper = RequestStatusMapper.INSTANCE;
     private final CrackHashManagerRequest.Alphabet alphabet = new CrackHashManagerRequest.Alphabet();

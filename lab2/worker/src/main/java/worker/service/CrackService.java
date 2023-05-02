@@ -6,25 +6,17 @@ import org.paukov.combinatorics.Generator;
 import org.paukov.combinatorics.ICombinatoricsVector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import ru.nsu.ccfit.schema.crack_hash_request.CrackHashManagerRequest;
 import ru.nsu.ccfit.schema.crack_hash_response.CrackHashWorkerResponse;
 import ru.nsu.ccfit.schema.crack_hash_response.CrackHashWorkerResponse.Answers;
-import worker.api.dto.OkResponse;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-import static org.paukov.combinatorics.CombinatoricsFactory.createMultiCombinationGenerator;
 import static org.paukov.combinatorics.CombinatoricsFactory.createPermutationWithRepetitionGenerator;
 
 @Service
@@ -33,19 +25,12 @@ public class CrackService {
 
     @Value("${crackHashService.manager.ip}")
     String managerIp;
+
     @Value("${crackHashService.manager.port}")
     Integer managerPort;
 
-    ExecutorService executorService = Executors.newFixedThreadPool(10);
-
     @Autowired
     RabbitProducer rabbitProducer;
-
-    public void putTask(CrackHashManagerRequest request) {
-//        executorService.execute(() -> {
-            crackCode(request);
-//        });
-    }
 
     public CrackHashWorkerResponse crackCode(CrackHashManagerRequest request) {
         log.info("progress task: {}", request);
