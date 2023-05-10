@@ -51,7 +51,7 @@ services:
       RABBITMQ_DEFAULT_PASS: pass
       RABBITMQ_DEFAULT_VHOST: /
     healthcheck:
-      test: ["CMD-SHELL", "rabbitmqctl node_health_check"]
+      test: ["CMD-SHELL", "rabbitmq-diagnostics check_running"]
       interval: 30s
       timeout: 10s
       retries: 5
